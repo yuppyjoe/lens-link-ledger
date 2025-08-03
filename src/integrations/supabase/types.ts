@@ -14,16 +14,270 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      app_user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      booking_items: {
+        Row: {
+          booking_id: string
+          daily_rate: number
+          id: string
+          item_id: string
+          quantity: number
+          total_amount: number
+        }
+        Insert: {
+          booking_id: string
+          daily_rate: number
+          id?: string
+          item_id: string
+          quantity?: number
+          total_amount: number
+        }
+        Update: {
+          booking_id?: string
+          daily_rate?: number
+          id?: string
+          item_id?: string
+          quantity?: number
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_items_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          balance_amount: number
+          created_at: string
+          customer_id: string
+          deposit_amount: number
+          hire_end_date: string
+          hire_start_date: string
+          id: string
+          mpesa_reference: string | null
+          payment_status: string
+          staff_id: string | null
+          status: string
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          balance_amount: number
+          created_at?: string
+          customer_id: string
+          deposit_amount: number
+          hire_end_date: string
+          hire_start_date: string
+          id?: string
+          mpesa_reference?: string | null
+          payment_status?: string
+          staff_id?: string | null
+          status?: string
+          total_cost: number
+          updated_at?: string
+        }
+        Update: {
+          balance_amount?: number
+          created_at?: string
+          customer_id?: string
+          deposit_amount?: number
+          hire_end_date?: string
+          hire_start_date?: string
+          id?: string
+          mpesa_reference?: string | null
+          payment_status?: string
+          staff_id?: string | null
+          status?: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          available_quantity: number
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price_per_day: number
+          total_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          available_quantity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price_per_day: number
+          total_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          available_quantity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price_per_day?: number
+          total_quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          id: string
+          mpesa_reference: string
+          payment_type: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          mpesa_reference: string
+          payment_type: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          mpesa_reference?: string
+          payment_type?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          id_number: string
+          id_photo_url: string | null
+          phone_number: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          id_number: string
+          id_photo_url?: string | null
+          phone_number: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          id_number?: string
+          id_photo_url?: string | null
+          phone_number?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referee_name: string | null
+          referee_phone: string | null
+          referred_user_id: string
+          referring_customer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referee_name?: string | null
+          referee_phone?: string | null
+          referred_user_id: string
+          referring_customer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referee_name?: string | null
+          referee_phone?: string | null
+          referred_user_id?: string
+          referring_customer_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "staff" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +404,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "staff", "customer"],
+    },
   },
 } as const
