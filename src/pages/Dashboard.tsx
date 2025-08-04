@@ -2,6 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
+import { ProfileForm } from '@/components/ProfileForm';
 
 export default function Dashboard() {
   const { user, userRole, profile, signOut } = useAuth();
@@ -41,19 +42,9 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {!profile ? (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Complete Your Profile</CardTitle>
-              <CardDescription>
-                Please complete your profile to start using the system
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button>
-                Complete Profile
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="mb-8">
+            <ProfileForm />
+          </div>
         ) : null}
 
         {/* Role-based Dashboard */}
