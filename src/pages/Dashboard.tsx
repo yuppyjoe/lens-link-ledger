@@ -1,11 +1,12 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ProfileForm } from '@/components/ProfileForm';
 
 export default function Dashboard() {
   const { user, userRole, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -56,7 +57,7 @@ export default function Dashboard() {
                 <CardDescription>Manage staff accounts and roles</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">Manage Staff</Button>
+                <Button className="w-full" onClick={() => navigate('/staff')}>Manage Staff</Button>
               </CardContent>
             </Card>
 
@@ -66,7 +67,7 @@ export default function Dashboard() {
                 <CardDescription>Manage camera gear inventory</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">Manage Inventory</Button>
+                <Button className="w-full" onClick={() => navigate('/inventory')}>Manage Inventory</Button>
               </CardContent>
             </Card>
 
@@ -76,7 +77,7 @@ export default function Dashboard() {
                 <CardDescription>View and manage all bookings</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View Bookings</Button>
+                <Button className="w-full" onClick={() => navigate('/bookings')}>View Bookings</Button>
               </CardContent>
             </Card>
 
@@ -86,7 +87,7 @@ export default function Dashboard() {
                 <CardDescription>Manage customer profiles</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">Manage Customers</Button>
+                <Button className="w-full" onClick={() => navigate('/customers')}>Manage Customers</Button>
               </CardContent>
             </Card>
 
@@ -96,7 +97,7 @@ export default function Dashboard() {
                 <CardDescription>View business reports</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View Reports</Button>
+                <Button className="w-full" onClick={() => navigate('/reports')}>View Reports</Button>
               </CardContent>
             </Card>
 
@@ -106,7 +107,7 @@ export default function Dashboard() {
                 <CardDescription>Track payments and revenue</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View Payments</Button>
+                <Button className="w-full" onClick={() => navigate('/payments')}>View Payments</Button>
               </CardContent>
             </Card>
           </div>
@@ -120,7 +121,7 @@ export default function Dashboard() {
                 <CardDescription>Manage bookings assigned to you</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View My Bookings</Button>
+                <Button className="w-full" onClick={() => navigate('/my-bookings')}>View My Bookings</Button>
               </CardContent>
             </Card>
 
@@ -130,7 +131,7 @@ export default function Dashboard() {
                 <CardDescription>View available equipment</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View Inventory</Button>
+                <Button className="w-full" onClick={() => navigate('/inventory')}>View Inventory</Button>
               </CardContent>
             </Card>
 
@@ -140,7 +141,7 @@ export default function Dashboard() {
                 <CardDescription>Assist customers with bookings</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">Manage Customers</Button>
+                <Button className="w-full" onClick={() => navigate('/customers')}>Manage Customers</Button>
               </CardContent>
             </Card>
 
@@ -150,7 +151,7 @@ export default function Dashboard() {
                 <CardDescription>Process payments</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">Process Payments</Button>
+                <Button className="w-full" onClick={() => navigate('/payments')}>Process Payments</Button>
               </CardContent>
             </Card>
           </div>
@@ -164,7 +165,7 @@ export default function Dashboard() {
                 <CardDescription>View available camera gear</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">Browse Equipment</Button>
+                <Button className="w-full" onClick={() => navigate('/equipment')}>Browse Equipment</Button>
               </CardContent>
             </Card>
 
@@ -174,7 +175,7 @@ export default function Dashboard() {
                 <CardDescription>View your booking history</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View My Bookings</Button>
+                <Button className="w-full" onClick={() => navigate('/my-bookings')}>View My Bookings</Button>
               </CardContent>
             </Card>
 
@@ -184,7 +185,7 @@ export default function Dashboard() {
                 <CardDescription>Create a new equipment booking</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">New Booking</Button>
+                <Button className="w-full" onClick={() => navigate('/new-booking')}>New Booking</Button>
               </CardContent>
             </Card>
 
@@ -194,7 +195,7 @@ export default function Dashboard() {
                 <CardDescription>View your payment history</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">View Payments</Button>
+                <Button className="w-full" onClick={() => navigate('/payment-history')}>View Payments</Button>
               </CardContent>
             </Card>
           </div>
