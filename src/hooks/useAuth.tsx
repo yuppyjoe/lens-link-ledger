@@ -32,20 +32,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async () => {
-    if (!user) return;
+  const fetchProfile = async (userId?: string) => {
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) return;
 
     try {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .maybeSingle();
 
       const { data: roleData } = await supabase
         .from('app_user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .maybeSingle();
 
       setProfile(profileData);
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile();
+            fetchProfile(session.user.id);
           }, 0);
         } else {
           setProfile(null);
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile();
+        fetchProfile(session.user.id);
       }
       setLoading(false);
     });
