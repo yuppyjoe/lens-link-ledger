@@ -1,0 +1,179 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { Navigate } from 'react-router-dom';
+
+interface StaffMember {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'staff' | 'customer';
+  created_at: string;
+  profiles?: {
+    full_name: string;
+    phone_number: string;
+  } | null;
+}
+
+export default function Staff() {
+  const { user, userRole } = useAuth();
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  if (!user || userRole !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+
+  const fetchStaff = async () => {
+    try {
+      // Get all user roles
+      const { data: roles, error: rolesError } = await supabase
+        .from('app_user_roles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (rolesError) throw rolesError;
+
+      // Get profiles separately to avoid foreign key issues
+      const staffWithProfiles = await Promise.all(
+        (roles || []).map(async (role) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, phone_number')
+            .eq('user_id', role.user_id)
+            .single();
+
+          return {
+            ...role,
+            profiles: profile
+          };
+        })
+      );
+
+      setStaff(staffWithProfiles);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch staff members",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateRole = async (userId: string, newRole: 'admin' | 'staff' | 'customer') => {
+    try {
+      const { error } = await supabase
+        .from('app_user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Role updated successfully",
+      });
+      
+      fetchStaff();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin': return 'destructive';
+      case 'staff': return 'default';
+      case 'customer': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold">Staff Management</h1>
+          <p className="text-sm text-muted-foreground">Manage staff roles and permissions</p>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>All Users</CardTitle>
+            <CardDescription>Manage user roles and permissions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {staff.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      {member.profiles?.full_name || 'No name provided'}
+                    </TableCell>
+                    <TableCell>
+                      {member.profiles?.phone_number || 'No phone provided'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getRoleBadgeVariant(member.role)}>
+                        {member.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(member.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={member.role}
+                        onValueChange={(newRole: 'admin' | 'staff' | 'customer') => updateRole(member.user_id, newRole)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="customer">Customer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}
