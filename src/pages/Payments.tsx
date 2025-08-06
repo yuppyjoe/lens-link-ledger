@@ -6,9 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { DollarSign, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Clock, CheckCircle, Plus, Edit, Trash2 } from 'lucide-react';
 
 interface Payment {
   id: string;
@@ -39,6 +42,7 @@ interface PaymentStats {
 export default function Payments() {
   const { user, userRole } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [stats, setStats] = useState<PaymentStats>({
     totalPayments: 0,
     totalAmount: 0,
@@ -46,7 +50,16 @@ export default function Payments() {
     completedAmount: 0
   });
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    booking_id: '',
+    amount: '',
+    payment_type: 'deposit',
+    mpesa_reference: ''
+  });
 
   if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
     return <Navigate to="/dashboard" replace />;
@@ -54,7 +67,34 @@ export default function Payments() {
 
   useEffect(() => {
     fetchPayments();
+    fetchBookings();
   }, []);
+
+  const fetchBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          customer_id,
+          hire_start_date,
+          hire_end_date,
+          total_cost,
+          deposit_amount,
+          balance_amount,
+          profiles:customer_id (
+            full_name,
+            phone_number
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error);
+    }
+  };
 
   const fetchPayments = async () => {
     try {
@@ -152,6 +192,89 @@ export default function Payments() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      booking_id: '',
+      amount: '',
+      payment_type: 'deposit',
+      mpesa_reference: ''
+    });
+    setEditingPayment(null);
+  };
+
+  const openEditDialog = (payment: Payment) => {
+    setFormData({
+      booking_id: payment.booking_id,
+      amount: payment.amount.toString(),
+      payment_type: payment.payment_type,
+      mpesa_reference: payment.mpesa_reference
+    });
+    setEditingPayment(payment);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const paymentData = {
+        booking_id: formData.booking_id,
+        amount: parseFloat(formData.amount),
+        payment_type: formData.payment_type,
+        mpesa_reference: formData.mpesa_reference,
+        status: 'pending'
+      };
+
+      if (editingPayment) {
+        const { error } = await supabase
+          .from('payments')
+          .update(paymentData)
+          .eq('id', editingPayment.id);
+
+        if (error) throw error;
+        toast({ title: "Success", description: "Payment updated successfully" });
+      } else {
+        const { error } = await supabase
+          .from('payments')
+          .insert([paymentData]);
+
+        if (error) throw error;
+        toast({ title: "Success", description: "Payment recorded successfully" });
+      }
+
+      setIsDialogOpen(false);
+      resetForm();
+      fetchPayments();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save payment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deletePayment = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this payment record?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Payment deleted successfully" });
+      fetchPayments();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete payment",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'completed': return 'default';
@@ -177,9 +300,93 @@ export default function Payments() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Payment Management</h1>
-          <p className="text-sm text-muted-foreground">Track and manage all payments</p>
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Payment Management</h1>
+            <p className="text-sm text-muted-foreground">Track and manage all payments</p>
+          </div>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="mr-2 h-4 w-4" />
+                Record Payment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>{editingPayment ? 'Edit Payment' : 'Record New Payment'}</DialogTitle>
+                <DialogDescription>
+                  {editingPayment ? 'Update payment details' : 'Record a new payment transaction'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="booking">Booking</Label>
+                  <Select
+                    value={formData.booking_id}
+                    onValueChange={(value) => setFormData({ ...formData, booking_id: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select booking" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bookings.map((booking) => (
+                        <SelectItem key={booking.id} value={booking.id}>
+                          {booking.profiles?.full_name} - ${booking.total_cost} ({new Date(booking.hire_start_date).toLocaleDateString()})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="type">Payment Type</Label>
+                  <Select
+                    value={formData.payment_type}
+                    onValueChange={(value) => setFormData({ ...formData, payment_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="deposit">Deposit</SelectItem>
+                      <SelectItem value="balance">Balance</SelectItem>
+                      <SelectItem value="full">Full Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="reference">M-Pesa Reference</Label>
+                  <Input
+                    id="reference"
+                    value={formData.mpesa_reference}
+                    onChange={(e) => setFormData({ ...formData, mpesa_reference: e.target.value })}
+                    placeholder="e.g. SH12345678"
+                    required
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full">
+                  {editingPayment ? 'Update Payment' : 'Record Payment'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </header>
 
@@ -316,7 +523,25 @@ export default function Payments() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(payment)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {userRole === 'admin' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deletePayment(payment.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">
                           <div>Payment ID:</div>
                           <div className="font-mono">{payment.id.slice(0, 8)}...</div>
                         </div>
