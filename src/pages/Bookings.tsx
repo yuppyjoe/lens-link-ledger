@@ -55,6 +55,7 @@ export default function Bookings() {
     hire_start_date: '',
     hire_end_date: '',
     deposit_amount: '',
+    customer_phone: '',
     items: [{ item_id: '', quantity: '1' }]
   });
 
@@ -201,6 +202,7 @@ export default function Bookings() {
       hire_start_date: '',
       hire_end_date: '',
       deposit_amount: '',
+      customer_phone: '',
       items: [{ item_id: '', quantity: '1' }]
     });
     setEditingBooking(null);
@@ -219,6 +221,7 @@ export default function Bookings() {
         hire_start_date: booking.hire_start_date,
         hire_end_date: booking.hire_end_date,
         deposit_amount: booking.deposit_amount.toString(),
+        customer_phone: booking.profiles?.phone_number || '',
         items: bookingItems?.map(item => ({
           item_id: item.item_id,
           quantity: item.quantity.toString()
@@ -401,10 +404,54 @@ export default function Bookings() {
     }
   };
 
+  const handleMpesaPayment = async () => {
+    if (!formData.customer_phone || !formData.deposit_amount) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter customer phone and deposit amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('mpesa-stk-push', {
+        body: {
+          phone_number: formData.customer_phone,
+          amount: parseFloat(formData.deposit_amount),
+          account_reference: `DEP-${Date.now()}`,
+          transaction_desc: 'Equipment Rental Deposit'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "M-Pesa Request Sent",
+        description: "Payment request sent to customer's phone. Please wait for confirmation.",
+        duration: 8000,
+      });
+    } catch (error) {
+      console.error('M-Pesa error:', error);
+      toast({
+        title: "M-Pesa Error",
+        description: "Failed to send payment request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteBooking = async (id: string) => {
     if (!confirm('Are you sure you want to delete this booking?')) return;
 
     try {
+      // First delete booking items due to foreign key constraints
+      await supabase
+        .from('booking_items')
+        .delete()
+        .eq('booking_id', id);
+
+      // Then delete the booking
       const { error } = await supabase
         .from('bookings')
         .delete()
@@ -414,6 +461,7 @@ export default function Bookings() {
       toast({ title: "Success", description: "Booking deleted successfully" });
       fetchBookings();
     } catch (error) {
+      console.error('Delete error:', error);
       toast({
         title: "Error",
         description: "Failed to delete booking",
@@ -474,7 +522,14 @@ export default function Bookings() {
                     <Label htmlFor="customer">Customer</Label>
                     <Select
                       value={formData.customer_id}
-                      onValueChange={(value) => setFormData({ ...formData, customer_id: value })}
+                      onValueChange={(value) => {
+                        const customer = customers.find(c => c.user_id === value);
+                        setFormData({ 
+                          ...formData, 
+                          customer_id: value, 
+                          customer_phone: customer?.phone_number || '' 
+                        });
+                      }}
                       required
                     >
                       <SelectTrigger>
@@ -490,15 +545,42 @@ export default function Bookings() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="deposit">Deposit Amount</Label>
+                    <Label htmlFor="customer_phone">Customer Phone (M-Pesa)</Label>
+                    <Input
+                      id="customer_phone"
+                      type="tel"
+                      placeholder="07XXXXXXXX"
+                      value={formData.customer_phone}
+                      onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                      required={!editingBooking}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="deposit">Deposit Amount (KES)</Label>
                     <Input
                       id="deposit"
                       type="number"
                       step="0.01"
+                      min="0"
                       value={formData.deposit_amount}
                       onChange={(e) => setFormData({ ...formData, deposit_amount: e.target.value })}
                       required
                     />
+                  </div>
+                  <div className="flex items-end">
+                    {!editingBooking && formData.deposit_amount && parseFloat(formData.deposit_amount) > 0 && formData.customer_phone && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleMpesaPayment}
+                        className="w-full"
+                      >
+                        Send M-Pesa Payment Request
+                      </Button>
+                    )}
                   </div>
                 </div>
 
