@@ -206,6 +206,35 @@ export default function Bookings() {
     setEditingBooking(null);
   };
 
+  const populateEditForm = async (booking: Booking) => {
+    try {
+      // Get booking items
+      const { data: bookingItems } = await supabase
+        .from('booking_items')
+        .select('item_id, quantity')
+        .eq('booking_id', booking.id);
+
+      setFormData({
+        customer_id: booking.customer_id,
+        hire_start_date: booking.hire_start_date,
+        hire_end_date: booking.hire_end_date,
+        deposit_amount: booking.deposit_amount.toString(),
+        items: bookingItems?.map(item => ({
+          item_id: item.item_id,
+          quantity: item.quantity.toString()
+        })) || [{ item_id: '', quantity: '1' }]
+      });
+      setEditingBooking(booking);
+      setIsDialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load booking details",
+        variant: "destructive",
+      });
+    }
+  };
+
   const addItemRow = () => {
     setFormData({
       ...formData,
@@ -219,9 +248,29 @@ export default function Bookings() {
   };
 
   const updateItemRow = (index: number, field: string, value: string) => {
-    const newItems = formData.items.map((item, i) => 
+    let newItems = formData.items.map((item, i) => 
       i === index ? { ...item, [field]: value } : item
     );
+    
+    // Merge duplicate items
+    if (field === 'item_id' && value) {
+      const duplicateIndex = newItems.findIndex((item, i) => 
+        i !== index && item.item_id === value
+      );
+      
+      if (duplicateIndex !== -1) {
+        const currentQuantity = parseInt(newItems[index].quantity) || 0;
+        const duplicateQuantity = parseInt(newItems[duplicateIndex].quantity) || 0;
+        newItems[duplicateIndex].quantity = (currentQuantity + duplicateQuantity).toString();
+        newItems = newItems.filter((_, i) => i !== index);
+        
+        toast({
+          title: "Items Merged",
+          description: "Duplicate items have been merged with updated quantity",
+        });
+      }
+    }
+    
     setFormData({ ...formData, items: newItems });
   };
 
@@ -239,8 +288,33 @@ export default function Bookings() {
     }, 0);
   };
 
+  const validateQuantity = (itemId: string, quantity: number): boolean => {
+    const inventoryItem = inventoryItems.find(inv => inv.id === itemId);
+    if (!inventoryItem) return false;
+    
+    // Calculate total quantity for this item across all rows
+    const totalQuantityForItem = formData.items
+      .filter(item => item.item_id === itemId)
+      .reduce((sum, item) => sum + parseInt(item.quantity || '0'), 0);
+    
+    return totalQuantityForItem <= inventoryItem.available_quantity;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate quantities
+    for (const item of formData.items) {
+      if (!validateQuantity(item.item_id, parseInt(item.quantity))) {
+        const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
+        toast({
+          title: "Invalid Quantity",
+          description: `Requested quantity exceeds available stock for ${inventoryItem?.name}. Available: ${inventoryItem?.available_quantity}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
     try {
       const totalCost = calculateTotal();
@@ -260,6 +334,12 @@ export default function Bookings() {
 
       let bookingId;
       if (editingBooking) {
+        // Delete existing booking items and recreate them
+        await supabase
+          .from('booking_items')
+          .delete()
+          .eq('booking_id', editingBooking.id);
+
         const { error } = await supabase
           .from('bookings')
           .update(bookingData)
@@ -280,26 +360,33 @@ export default function Bookings() {
         toast({ title: "Success", description: "Booking created successfully" });
       }
 
-      // Handle booking items
-      if (!editingBooking) {
-        const itemsToInsert = formData.items.map(item => {
-          const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
-          const days = Math.ceil((new Date(formData.hire_end_date).getTime() - new Date(formData.hire_start_date).getTime()) / (1000 * 60 * 60 * 24));
-          
-          return {
-            booking_id: bookingId,
-            item_id: item.item_id,
-            quantity: parseInt(item.quantity),
-            daily_rate: inventoryItem?.price_per_day || 0,
-            total_amount: (inventoryItem?.price_per_day || 0) * parseInt(item.quantity) * days
-          };
+      // Handle booking items (for both create and update)
+      const itemsToInsert = formData.items.map(item => {
+        const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
+        const days = Math.ceil((new Date(formData.hire_end_date).getTime() - new Date(formData.hire_start_date).getTime()) / (1000 * 60 * 60 * 24));
+        
+        return {
+          booking_id: bookingId,
+          item_id: item.item_id,
+          quantity: parseInt(item.quantity),
+          daily_rate: inventoryItem?.price_per_day || 0,
+          total_amount: (inventoryItem?.price_per_day || 0) * parseInt(item.quantity) * days
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from('booking_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
+
+      // Show payment prompt for admin-created bookings
+      if (!editingBooking && depositAmount > 0) {
+        toast({
+          title: "Payment Required",
+          description: `Please collect KES ${depositAmount.toLocaleString()} deposit from the customer`,
+          duration: 5000,
         });
-
-        const { error: itemsError } = await supabase
-          .from('booking_items')
-          .insert(itemsToInsert);
-
-        if (itemsError) throw itemsError;
       }
 
       setIsDialogOpen(false);
@@ -451,9 +538,9 @@ export default function Bookings() {
                           <SelectValue placeholder="Select equipment" />
                         </SelectTrigger>
                         <SelectContent>
-                          {inventoryItems.map((inv) => (
+                           {inventoryItems.map((inv) => (
                             <SelectItem key={inv.id} value={inv.id}>
-                              {inv.name} - ${inv.price_per_day}/day
+                              {inv.name} - KES {inv.price_per_day}/day (Available: {inv.available_quantity})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -461,8 +548,21 @@ export default function Bookings() {
                       <Input
                         type="number"
                         min="1"
+                        max={inventoryItems.find(inv => inv.id === item.item_id)?.available_quantity || 999}
                         value={item.quantity}
-                        onChange={(e) => updateItemRow(index, 'quantity', e.target.value)}
+                        onChange={(e) => {
+                          const quantity = parseInt(e.target.value);
+                          const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
+                          if (inventoryItem && quantity > inventoryItem.available_quantity) {
+                            toast({
+                              title: "Invalid Quantity",
+                              description: `Maximum available: ${inventoryItem.available_quantity}`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          updateItemRow(index, 'quantity', e.target.value);
+                        }}
                         className="w-20"
                         required
                       />
@@ -481,10 +581,15 @@ export default function Bookings() {
 
                 {formData.hire_start_date && formData.hire_end_date && (
                   <div className="p-4 bg-muted rounded-lg">
-                    <p className="font-medium">Total Cost: ${calculateTotal().toFixed(2)}</p>
+                    <p className="font-medium">Total Cost: KES {calculateTotal().toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">
                       Days: {Math.ceil((new Date(formData.hire_end_date).getTime() - new Date(formData.hire_start_date).getTime()) / (1000 * 60 * 60 * 24))}
                     </p>
+                    {formData.deposit_amount && (
+                      <p className="text-sm text-muted-foreground">
+                        Balance: KES {(calculateTotal() - parseFloat(formData.deposit_amount)).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -544,17 +649,17 @@ export default function Bookings() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">${booking.total_cost}</div>
-                          <div className="text-muted-foreground">
-                            Deposit: ${booking.deposit_amount}
-                          </div>
-                          <div className="text-muted-foreground">
-                            Balance: ${booking.balance_amount}
-                          </div>
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="text-sm">
+                           <div className="font-medium">KES {booking.total_cost.toLocaleString()}</div>
+                           <div className="text-muted-foreground">
+                             Deposit: KES {booking.deposit_amount.toLocaleString()}
+                           </div>
+                           <div className="text-muted-foreground">
+                             Balance: KES {booking.balance_amount.toLocaleString()}
+                           </div>
+                         </div>
+                       </TableCell>
                       <TableCell>
                         <div className="space-y-2">
                           <Badge variant={getPaymentBadgeVariant(booking.payment_status)}>
@@ -598,21 +703,11 @@ export default function Bookings() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setFormData({
-                                customer_id: booking.customer_id,
-                                hire_start_date: booking.hire_start_date,
-                                hire_end_date: booking.hire_end_date,
-                                deposit_amount: booking.deposit_amount.toString(),
-                                items: [{ item_id: '', quantity: '1' }]
-                              });
-                              setEditingBooking(booking);
-                              setIsDialogOpen(true);
-                            }}
-                          >
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => populateEditForm(booking)}
+                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           {userRole === 'admin' && (
