@@ -24,7 +24,7 @@ interface InventoryItem {
 }
 
 export default function Inventory() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,13 +40,22 @@ export default function Inventory() {
     image_url: ''
   });
 
+  // Show loading while auth is being checked
+  if (authLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+
+  // Redirect if not authorized
   if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
     return <Navigate to="/dashboard" replace />;
   }
 
   useEffect(() => {
-    fetchInventory();
-  }, []);
+    // Only fetch inventory if user is authenticated and authorized
+    if (user && (userRole === 'admin' || userRole === 'staff')) {
+      fetchInventory();
+    }
+  }, [user, userRole]);
 
   const fetchInventory = async () => {
     try {
