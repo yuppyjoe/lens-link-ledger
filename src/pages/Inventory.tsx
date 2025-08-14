@@ -20,6 +20,7 @@ interface InventoryItem {
   total_quantity: number;
   available_quantity: number;
   image_url?: string;
+  category: string;
   created_at: string;
 }
 
@@ -37,7 +38,8 @@ export default function Inventory() {
     price_per_day: '',
     total_quantity: '',
     available_quantity: '',
-    image_url: ''
+    image_url: '',
+    category: 'media equipment'
   });
 
   // Show loading while auth is being checked
@@ -84,7 +86,8 @@ export default function Inventory() {
       price_per_day: '',
       total_quantity: '',
       available_quantity: '',
-      image_url: ''
+      image_url: '',
+      category: 'media equipment'
     });
     setEditingItem(null);
   };
@@ -96,7 +99,8 @@ export default function Inventory() {
       price_per_day: item.price_per_day.toString(),
       total_quantity: item.total_quantity.toString(),
       available_quantity: item.available_quantity.toString(),
-      image_url: item.image_url || ''
+      image_url: item.image_url || '',
+      category: item.category || 'media equipment'
     });
     setEditingItem(item);
     setIsDialogOpen(true);
@@ -112,7 +116,8 @@ export default function Inventory() {
         price_per_day: parseFloat(formData.price_per_day),
         total_quantity: parseInt(formData.total_quantity),
         available_quantity: parseInt(formData.available_quantity),
-        image_url: formData.image_url || null
+        image_url: formData.image_url || null,
+        category: formData.category
       };
 
       if (editingItem) {
@@ -211,7 +216,20 @@ export default function Inventory() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="price">Price per Day</Label>
+                  <Label htmlFor="category">Category</Label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  >
+                    <option value="media equipment">Media Equipment</option>
+                    <option value="all available in media shop">All Available in Media Shop</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="price">Price per Day (KES)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -270,8 +288,9 @@ export default function Inventory() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Price/Day</TableHead>
+                  <TableHead>Price/Day (KES)</TableHead>
                   <TableHead>Available</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Actions</TableHead>
@@ -281,8 +300,9 @@ export default function Inventory() {
                 {items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
                     <TableCell className="max-w-xs truncate">{item.description}</TableCell>
-                    <TableCell>${item.price_per_day}</TableCell>
+                    <TableCell>KES {item.price_per_day.toLocaleString()}</TableCell>
                     <TableCell>{item.available_quantity}</TableCell>
                     <TableCell>{item.total_quantity}</TableCell>
                     <TableCell>

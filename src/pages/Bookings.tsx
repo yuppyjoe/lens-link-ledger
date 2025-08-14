@@ -383,8 +383,9 @@ export default function Bookings() {
 
       if (itemsError) throw itemsError;
 
-      // Show payment prompt for admin-created bookings
-      if (!editingBooking && depositAmount > 0) {
+      // Show payment prompt for admin-created bookings (only if customer, not admin/staff)
+      const isBookingForCustomer = await checkIfCustomer(formData.customer_id);
+      if (!editingBooking && depositAmount > 0 && isBookingForCustomer) {
         toast({
           title: "Payment Required",
           description: `Please collect KES ${depositAmount.toLocaleString()} deposit from the customer`,
@@ -404,12 +405,37 @@ export default function Bookings() {
     }
   };
 
+  const checkIfCustomer = async (userId: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase
+        .from('app_user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      return data?.role === 'customer';
+    } catch {
+      return true; // Default to customer if unable to determine
+    }
+  };
+
   const handleMpesaPayment = async () => {
     if (!formData.customer_phone || !formData.deposit_amount) {
       toast({
         title: "Missing Information",
         description: "Please enter customer phone and deposit amount",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // Only allow M-Pesa for customer bookings
+    const isCustomerBooking = await checkIfCustomer(formData.customer_id);
+    if (!isCustomerBooking) {
+      toast({
+        title: "M-Pesa Not Required",
+        description: "Payment not required for admin/staff bookings",
+        variant: "default",
       });
       return;
     }
