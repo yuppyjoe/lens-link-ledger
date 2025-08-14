@@ -306,9 +306,29 @@ export default function Bookings() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form data
+    if (!formData.customer_id || !formData.hire_start_date || !formData.hire_end_date || !formData.deposit_amount) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that at least one item is selected
+    if (!formData.items.some(item => item.item_id && item.quantity)) {
+      toast({
+        title: "No Items Selected",
+        description: "Please select at least one item for the booking",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Validate quantities
     for (const item of formData.items) {
-      if (!validateQuantity(item.item_id, parseInt(item.quantity))) {
+      if (item.item_id && item.quantity && !validateQuantity(item.item_id, parseInt(item.quantity))) {
         const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
         toast({
           title: "Invalid Quantity",
@@ -364,7 +384,8 @@ export default function Bookings() {
       }
 
       // Handle booking items (for both create and update)
-      const itemsToInsert = formData.items.map(item => {
+      const validItems = formData.items.filter(item => item.item_id && item.quantity);
+      const itemsToInsert = validItems.map(item => {
         const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
         const days = Math.ceil((new Date(formData.hire_end_date).getTime() - new Date(formData.hire_start_date).getTime()) / (1000 * 60 * 60 * 24));
         
@@ -396,10 +417,11 @@ export default function Bookings() {
       setIsDialogOpen(false);
       resetForm();
       fetchBookings();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Booking save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save booking",
+        description: error.message || "Failed to save booking",
         variant: "destructive",
       });
     }
@@ -450,20 +472,32 @@ export default function Bookings() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || 'M-Pesa service error');
+      }
 
       toast({
         title: "M-Pesa Request Sent",
         description: "Payment request sent to customer's phone. Please wait for confirmation.",
         duration: 8000,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('M-Pesa error:', error);
-      toast({
-        title: "M-Pesa Error",
-        description: "Failed to send payment request. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check if it's a configuration error
+      if (error.message?.includes('Missing M-Pesa configuration')) {
+        toast({
+          title: "M-Pesa Not Configured",
+          description: "M-Pesa credentials need to be configured. Please contact administrator.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "M-Pesa Error",
+          description: error.message || "Failed to send payment request. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
