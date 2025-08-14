@@ -39,7 +39,7 @@ export default function Inventory() {
     total_quantity: '',
     available_quantity: '',
     image_url: '',
-    category: 'media equipment'
+    category: 'Camera Accessories'
   });
 
   // Show loading while auth is being checked
@@ -87,7 +87,7 @@ export default function Inventory() {
       total_quantity: '',
       available_quantity: '',
       image_url: '',
-      category: 'media equipment'
+      category: 'Camera Accessories'
     });
     setEditingItem(null);
   };
@@ -100,7 +100,7 @@ export default function Inventory() {
       total_quantity: item.total_quantity.toString(),
       available_quantity: item.available_quantity.toString(),
       image_url: item.image_url || '',
-      category: item.category || 'media equipment'
+      category: item.category || 'Camera Accessories'
     });
     setEditingItem(item);
     setIsDialogOpen(true);
@@ -224,8 +224,19 @@ export default function Inventory() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                   >
-                    <option value="media equipment">Media Equipment</option>
-                    <option value="all available in media shop">All Available in Media Shop</option>
+                    <option value="Camera Accessories">Camera Accessories</option>
+                    <option value="Camera">Camera</option>
+                    <option value="Bags & Cases">Bags & Cases</option>
+                    <option value="Batteries & Power Accessories">Batteries & Power Accessories</option>
+                    <option value="Cables">Cables</option>
+                    <option value="Transmitters">Transmitters</option>
+                    <option value="Cameras">Cameras</option>
+                    <option value="Lighting & Studio">Lighting & Studio</option>
+                    <option value="Audio">Audio</option>
+                    <option value="Storage & Card Accessories">Storage & Card Accessories</option>
+                    <option value="Tripods & Support">Tripods & Support</option>
+                    <option value="Gaming">Gaming</option>
+                    <option value="Portable Speakers & Electronics">Portable Speakers & Electronics</option>
                   </select>
                 </div>
                 <div>
