@@ -49,7 +49,7 @@ export default function Dashboard() {
         ) : null}
 
         {/* Role-based Dashboard */}
-        {userRole === 'admin' && (
+        {(userRole === 'admin' || userRole === 'superadmin') && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader>

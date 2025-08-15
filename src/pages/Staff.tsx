@@ -12,7 +12,7 @@ import { Navigate } from 'react-router-dom';
 interface StaffMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'staff' | 'customer';
+  role: 'superadmin' | 'admin' | 'staff' | 'customer';
   created_at: string;
   profiles?: {
     full_name: string;
@@ -26,7 +26,7 @@ export default function Staff() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  if (!user || userRole !== 'admin') {
+  if (!user || (userRole !== 'admin' && userRole !== 'superadmin')) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -36,10 +36,21 @@ export default function Staff() {
 
   const fetchStaff = async () => {
     try {
-      // Get all user roles
+      // Filter roles based on current user's role
+      let roleFilter: ('superadmin' | 'admin' | 'staff' | 'customer')[];
+      if (userRole === 'superadmin') {
+        roleFilter = ['superadmin', 'admin', 'staff'];
+      } else if (userRole === 'admin') {
+        roleFilter = ['admin', 'staff'];
+      } else {
+        roleFilter = [];
+      }
+
+      // Get user roles with filtering
       const { data: roles, error: rolesError } = await supabase
         .from('app_user_roles')
         .select('*')
+        .in('role', roleFilter)
         .order('created_at', { ascending: false });
 
       if (rolesError) throw rolesError;
@@ -72,7 +83,7 @@ export default function Staff() {
     }
   };
 
-  const updateRole = async (userId: string, newRole: 'admin' | 'staff' | 'customer') => {
+  const updateRole = async (userId: string, newRole: 'superadmin' | 'admin' | 'staff' | 'customer') => {
     try {
       const { error } = await supabase
         .from('app_user_roles')
@@ -98,9 +109,10 @@ export default function Staff() {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'admin': return 'destructive';
-      case 'staff': return 'default';
-      case 'customer': return 'secondary';
+      case 'superadmin': return 'destructive';
+      case 'admin': return 'default';
+      case 'staff': return 'secondary';
+      case 'customer': return 'outline';
       default: return 'outline';
     }
   };
@@ -155,15 +167,25 @@ export default function Staff() {
                     <TableCell>
                       <Select
                         value={member.role}
-                        onValueChange={(newRole: 'admin' | 'staff' | 'customer') => updateRole(member.user_id, newRole)}
+                        onValueChange={(newRole: 'superadmin' | 'admin' | 'staff' | 'customer') => updateRole(member.user_id, newRole)}
                       >
                         <SelectTrigger className="w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="staff">Staff</SelectItem>
-                          <SelectItem value="customer">Customer</SelectItem>
+                          {userRole === 'superadmin' && (
+                            <>
+                              <SelectItem value="superadmin">Super Admin</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="staff">Staff</SelectItem>
+                            </>
+                          )}
+                          {userRole === 'admin' && member.role !== 'superadmin' && (
+                            <>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="staff">Staff</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </TableCell>

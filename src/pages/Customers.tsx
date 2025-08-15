@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 import { Eye, Phone, Mail } from 'lucide-react';
@@ -28,7 +29,7 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
+  if (!user || (userRole !== 'admin' && userRole !== 'staff' && userRole !== 'superadmin')) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -88,6 +89,30 @@ export default function Customers() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const promoteCustomer = async (userId: string, newRole: 'admin' | 'staff') => {
+    try {
+      const { error } = await supabase
+        .from('app_user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Customer promoted to ${newRole} successfully`,
+      });
+      
+      fetchCustomers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to promote customer",
+        variant: "destructive",
+      });
     }
   };
 
@@ -233,6 +258,23 @@ export default function Customers() {
                               </a>
                             </Button>
                           )}
+                          {/* Role promotion dropdown */}
+                          <Select onValueChange={(newRole: 'admin' | 'staff') => promoteCustomer(customer.user_id, newRole)}>
+                            <SelectTrigger className="w-20">
+                              <SelectValue placeholder="Promote" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {userRole === 'superadmin' && (
+                                <>
+                                  <SelectItem value="admin">To Admin</SelectItem>
+                                  <SelectItem value="staff">To Staff</SelectItem>
+                                </>
+                              )}
+                              {userRole === 'admin' && (
+                                <SelectItem value="staff">To Staff</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </TableCell>
                     </TableRow>
