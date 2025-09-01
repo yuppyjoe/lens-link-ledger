@@ -30,38 +30,19 @@ export function CreateCustomerDialog({ onCustomerCreated }: CreateCustomerDialog
     setLoading(true);
 
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        email_confirm: true
+      // Call edge function to create customer
+      const { data, error } = await supabase.functions.invoke('create-customer', {
+        body: {
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName,
+          phoneNumber: formData.phoneNumber,
+          idNumber: formData.idNumber
+        }
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: authData.user.id,
-            full_name: formData.fullName,
-            phone_number: formData.phoneNumber,
-            id_number: formData.idNumber
-          });
-
-        if (profileError) throw profileError;
-
-        // Set customer role (this should be handled by the trigger, but just in case)
-        const { error: roleError } = await supabase
-          .from('app_user_roles')
-          .upsert({
-            user_id: authData.user.id,
-            role: 'customer'
-          });
-
-        if (roleError) throw roleError;
-      }
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       toast({
         title: "Success",

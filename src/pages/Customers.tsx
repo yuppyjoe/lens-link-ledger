@@ -22,6 +22,8 @@ interface Customer {
   booking_count?: number;
   total_spent?: number;
   last_booking?: string;
+  role?: string;
+  app_user_roles?: { role: string }[];
 }
 
 export default function Customers() {
@@ -48,7 +50,17 @@ export default function Customers() {
 
       if (profilesError) throw profilesError;
 
-      // Then get booking statistics for each customer
+      // Then get all roles to match with profiles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('app_user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Create a map of user_id to role for quick lookup
+      const roleMap = new Map(userRoles?.map(r => [r.user_id, r.role]) || []);
+
+      // Then get booking statistics for each person
       const customersWithStats = await Promise.all(
         (profiles || []).map(async (profile) => {
           const { data: bookings, error: bookingsError } = await supabase
@@ -57,12 +69,13 @@ export default function Customers() {
             .eq('customer_id', profile.user_id);
 
           if (bookingsError) {
-            console.error('Error fetching bookings for customer:', bookingsError);
+            console.error('Error fetching bookings for user:', bookingsError);
             return {
               ...profile,
               booking_count: 0,
               total_spent: 0,
-              last_booking: null
+              last_booking: null,
+              role: roleMap.get(profile.user_id) || 'customer'
             };
           }
 
@@ -76,12 +89,13 @@ export default function Customers() {
             ...profile,
             booking_count,
             total_spent,
-            last_booking
+            last_booking,
+            role: roleMap.get(profile.user_id) || 'customer'
           };
         })
       );
 
-      setCustomers(customersWithStats);
+      setCustomers(customersWithStats as Customer[]);
     } catch (error) {
       toast({
         title: "Error",
@@ -132,8 +146,8 @@ export default function Customers() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Customer Management</h1>
-          <p className="text-sm text-muted-foreground">View and manage customer profiles and history</p>
+          <h1 className="text-2xl font-bold">User Management</h1>
+          <p className="text-sm text-muted-foreground">View and manage all user profiles and history</p>
         </div>
       </header>
 
@@ -185,8 +199,8 @@ export default function Customers() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>All Customers</CardTitle>
-              <CardDescription>Manage customer profiles and view booking history</CardDescription>
+              <CardTitle>All Users</CardTitle>
+              <CardDescription>Manage all user profiles and view booking history</CardDescription>
             </div>
             <CreateCustomerDialog onCustomerCreated={fetchCustomers} />
           </CardHeader>
@@ -197,6 +211,7 @@ export default function Customers() {
                   <TableHead>Customer</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>ID Number</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Bookings</TableHead>
                   <TableHead>Total Spent</TableHead>
@@ -224,6 +239,15 @@ export default function Customers() {
                       </TableCell>
                       <TableCell>
                         <span className="font-mono text-sm">{customer.id_number}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          customer.role === 'superadmin' ? 'destructive' :
+                          customer.role === 'admin' ? 'default' :
+                          customer.role === 'staff' ? 'secondary' : 'outline'
+                        }>
+                          {customer.role || 'customer'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={customerType.variant}>
@@ -262,23 +286,25 @@ export default function Customers() {
                               </a>
                             </Button>
                           )}
-                          {/* Role promotion dropdown */}
-                          <Select onValueChange={(newRole: 'admin' | 'staff') => promoteCustomer(customer.user_id, newRole)}>
-                            <SelectTrigger className="w-20">
-                              <SelectValue placeholder="Promote" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {userRole === 'superadmin' && (
-                                <>
-                                  <SelectItem value="admin">To Admin</SelectItem>
+                          {/* Only show promotion for customers */}
+                          {customer.role === 'customer' && (
+                            <Select onValueChange={(newRole: 'admin' | 'staff') => promoteCustomer(customer.user_id, newRole)}>
+                              <SelectTrigger className="w-20">
+                                <SelectValue placeholder="Promote" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {userRole === 'superadmin' && (
+                                  <>
+                                    <SelectItem value="admin">To Admin</SelectItem>
+                                    <SelectItem value="staff">To Staff</SelectItem>
+                                  </>
+                                )}
+                                {userRole === 'admin' && (
                                   <SelectItem value="staff">To Staff</SelectItem>
-                                </>
-                              )}
-                              {userRole === 'admin' && (
-                                <SelectItem value="staff">To Staff</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
