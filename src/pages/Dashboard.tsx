@@ -91,15 +91,18 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Reports</CardTitle>
-                <CardDescription>View business reports</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full" onClick={() => navigate('/reports')}>View Reports</Button>
-              </CardContent>
-            </Card>
+            {/* Reports only for admin and superadmin */}
+            {(userRole === 'admin' || userRole === 'superadmin') && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reports</CardTitle>
+                  <CardDescription>View business reports</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full" onClick={() => navigate('/reports')}>View Reports</Button>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

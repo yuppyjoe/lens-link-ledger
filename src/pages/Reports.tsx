@@ -14,6 +14,7 @@ interface ReportData {
   monthlyRevenue: { month: string; revenue: number }[];
   topItems: { name: string; bookings: number }[];
   recentBookings: any[];
+  staffList: { name: string; role: string; phone: string }[];
 }
 
 export default function Reports() {
@@ -22,7 +23,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  if (!user || userRole !== 'admin') {
+  if (!user || (userRole !== 'admin' && userRole !== 'superadmin')) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -88,6 +89,30 @@ export default function Reports() {
         .sort((a, b) => b.bookings - a.bookings)
         .slice(0, 5);
 
+      // Fetch staff list for admin and superadmin
+      const { data: staffRoles, error: staffError } = await supabase
+        .from('app_user_roles')
+        .select('user_id, role')
+        .in('role', ['staff', 'admin', 'superadmin']);
+
+      if (staffError) throw staffError;
+
+      const staffList = await Promise.all(
+        (staffRoles || []).map(async (role) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, phone_number')
+            .eq('user_id', role.user_id)
+            .single();
+
+          return {
+            name: profile?.full_name || 'No name',
+            role: role.role,
+            phone: profile?.phone_number || 'No phone'
+          };
+        })
+      );
+
       setReportData({
         totalRevenue,
         totalBookings: bookings?.length || 0,
@@ -95,7 +120,8 @@ export default function Reports() {
         totalItems: itemCount || 0,
         monthlyRevenue,
         topItems,
-        recentBookings: bookings?.slice(0, 5) || []
+        recentBookings: bookings?.slice(0, 5) || [],
+        staffList
       });
 
     } catch (error) {
@@ -239,6 +265,29 @@ export default function Reports() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Staff List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Staff</CardTitle>
+            <CardDescription>List of all staff members</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {reportData.staffList.map((staff, index) => (
+                <div key={index} className="flex items-center justify-between border-b pb-2">
+                  <div>
+                    <p className="font-medium">{staff.name}</p>
+                    <p className="text-sm text-muted-foreground">{staff.phone}</p>
+                  </div>
+                  <span className="px-2 py-1 bg-muted rounded-full text-sm capitalize">
+                    {staff.role}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

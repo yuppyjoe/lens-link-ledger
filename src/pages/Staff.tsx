@@ -165,29 +165,36 @@ export default function Staff() {
                       {new Date(member.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={member.role}
-                        onValueChange={(newRole: 'superadmin' | 'admin' | 'staff' | 'customer') => updateRole(member.user_id, newRole)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {userRole === 'superadmin' && (
-                            <>
-                              <SelectItem value="superadmin">Super Admin</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="staff">Staff</SelectItem>
-                            </>
-                          )}
-                          {userRole === 'admin' && member.role !== 'superadmin' && (
-                            <>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="staff">Staff</SelectItem>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      {/* Prevent superadmin from changing their own role */}
+                      {member.user_id === user?.id && member.role === 'superadmin' ? (
+                        <Badge variant={getRoleBadgeVariant(member.role)}>
+                          {member.role} (You)
+                        </Badge>
+                      ) : (
+                        <Select
+                          value={member.role}
+                          onValueChange={(newRole: 'superadmin' | 'admin' | 'staff' | 'customer') => updateRole(member.user_id, newRole)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {userRole === 'superadmin' && (
+                              <>
+                                <SelectItem value="superadmin">Super Admin</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="staff">Staff</SelectItem>
+                              </>
+                            )}
+                            {userRole === 'admin' && member.role !== 'superadmin' && (
+                              <>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="staff">Staff</SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

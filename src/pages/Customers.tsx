@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 import { Eye, Phone, Mail } from 'lucide-react';
+import { CreateCustomerDialog } from '@/components/CreateCustomerDialog';
 
 interface Customer {
   id: string;
@@ -182,9 +183,12 @@ export default function Customers() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>All Customers</CardTitle>
-            <CardDescription>Manage customer profiles and view booking history</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>All Customers</CardTitle>
+              <CardDescription>Manage customer profiles and view booking history</CardDescription>
+            </div>
+            <CreateCustomerDialog onCustomerCreated={fetchCustomers} />
           </CardHeader>
           <CardContent>
             <Table>
