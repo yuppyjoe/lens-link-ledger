@@ -31,18 +31,27 @@ export function CreateCustomerDialog({ onCustomerCreated }: CreateCustomerDialog
 
     try {
       // Call edge function to create customer
-      const { data, error } = await supabase.functions.invoke('create-customer', {
-        body: {
+      const response = await fetch(`https://ttfqwxzkhtziaugfgeqw.supabase.co/functions/v1/create-customer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0ZnF3eHpraHR6aWF1Z2ZnZXF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyNTkxMTcsImV4cCI6MjA2OTgzNTExN30.BxSvK-AfMfV5uDzFSxHeD4pVi03v0wnaTJWN79qFNxM'
+        },
+        body: JSON.stringify({
           email: formData.email,
           password: formData.password,
           fullName: formData.fullName,
           phoneNumber: formData.phoneNumber,
           idNumber: formData.idNumber
-        }
+        })
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create customer');
+      }
 
       toast({
         title: "Success",
