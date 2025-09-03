@@ -58,11 +58,15 @@ export default function Staff() {
       // Get profiles separately to avoid foreign key issues
       const staffWithProfiles = await Promise.all(
         (roles || []).map(async (role) => {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('full_name, phone_number')
             .eq('user_id', role.user_id)
-            .single();
+            .maybeSingle();
+
+          if (profileError) {
+            console.error('Error fetching profile for user:', profileError);
+          }
 
           return {
             ...role,
