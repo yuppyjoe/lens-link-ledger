@@ -42,27 +42,24 @@ export default function Customers() {
 
   const fetchCustomers = async () => {
     try {
-      // First get all profiles
-      const { data: profiles, error: profilesError } = await supabase
+      // Get all profiles with their roles in a single query
+      const { data: profilesWithRoles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          app_user_roles (
+            role
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Then get all roles to match with profiles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('app_user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      // Create a map of user_id to role for quick lookup
-      const roleMap = new Map(userRoles?.map(r => [r.user_id, r.role]) || []);
-
-      // Then get booking statistics for each person
+      // Process each profile to get booking statistics
       const customersWithStats = await Promise.all(
-        (profiles || []).map(async (profile) => {
+        (profilesWithRoles || []).map(async (profile: any) => {
+          const userRole = profile.app_user_roles?.[0]?.role || 'customer';
+          
           const { data: bookings, error: bookingsError } = await supabase
             .from('bookings')
             .select('total_cost, created_at')
@@ -75,7 +72,7 @@ export default function Customers() {
               booking_count: 0,
               total_spent: 0,
               last_booking: null,
-              role: roleMap.get(profile.user_id) || 'customer'
+              role: userRole
             };
           }
 
@@ -90,13 +87,14 @@ export default function Customers() {
             booking_count,
             total_spent,
             last_booking,
-            role: roleMap.get(profile.user_id) || 'customer'
+            role: userRole
           };
         })
       );
 
       setCustomers(customersWithStats as Customer[]);
     } catch (error) {
+      console.error('Error fetching customers:', error);
       toast({
         title: "Error",
         description: "Failed to fetch customers",
@@ -199,8 +197,8 @@ export default function Customers() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>All Users</CardTitle>
-              <CardDescription>Manage all user profiles and view booking history</CardDescription>
+              <CardTitle>Customer Management</CardTitle>
+              <CardDescription>View and manage customer profiles and booking history</CardDescription>
             </div>
             <CreateCustomerDialog onCustomerCreated={fetchCustomers} />
           </CardHeader>
