@@ -46,36 +46,34 @@ export default function Staff() {
         roleFilter = [];
       }
 
-      // Get all profiles first with their roles in a single query
-      const { data: profilesWithRoles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          app_user_roles!inner (
-            id,
-            role,
-            created_at
-          )
-        `)
-        .in('app_user_roles.role', roleFilter)
-        .order('app_user_roles.created_at', { ascending: false });
+      // Get user roles with filtering
+      const { data: roles, error: rolesError } = await supabase
+        .from('app_user_roles')
+        .select('*')
+        .in('role', roleFilter)
+        .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (rolesError) throw rolesError;
 
-      // Transform the data to match expected format
-      const staffWithProfiles = (profilesWithRoles || []).map((profile: any) => {
-        const userRole = profile.app_user_roles[0];
-        return {
-          id: userRole.id,
-          user_id: profile.user_id,
-          role: userRole.role,
-          created_at: userRole.created_at,
-          profiles: {
-            full_name: profile.full_name,
-            phone_number: profile.phone_number
+      // Get profiles separately to avoid foreign key issues
+      const staffWithProfiles = await Promise.all(
+        (roles || []).map(async (role) => {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, phone_number')
+            .eq('user_id', role.user_id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error('Error fetching profile for user:', profileError);
           }
-        };
-      });
+
+          return {
+            ...role,
+            profiles: profile
+          };
+        })
+      );
 
       setStaff(staffWithProfiles);
     } catch (error) {

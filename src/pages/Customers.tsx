@@ -42,24 +42,27 @@ export default function Customers() {
 
   const fetchCustomers = async () => {
     try {
-      // Get all profiles with their roles in a single query
-      const { data: profilesWithRoles, error: profilesError } = await supabase
+      // First get all profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          app_user_roles (
-            role
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Process each profile to get booking statistics
+      // Then get all roles to match with profiles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('app_user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Create a map of user_id to role for quick lookup
+      const roleMap = new Map(userRoles?.map(r => [r.user_id, r.role]) || []);
+
+      // Then get booking statistics for each person
       const customersWithStats = await Promise.all(
-        (profilesWithRoles || []).map(async (profile: any) => {
-          const userRole = profile.app_user_roles?.[0]?.role || 'customer';
-          
+        (profiles || []).map(async (profile) => {
           const { data: bookings, error: bookingsError } = await supabase
             .from('bookings')
             .select('total_cost, created_at')
@@ -72,7 +75,7 @@ export default function Customers() {
               booking_count: 0,
               total_spent: 0,
               last_booking: null,
-              role: userRole
+              role: roleMap.get(profile.user_id) || 'customer'
             };
           }
 
@@ -87,7 +90,7 @@ export default function Customers() {
             booking_count,
             total_spent,
             last_booking,
-            role: userRole
+            role: roleMap.get(profile.user_id) || 'customer'
           };
         })
       );
