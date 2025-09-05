@@ -334,7 +334,7 @@ export default function Payments() {
                     <SelectContent>
                       {bookings.map((booking) => (
                         <SelectItem key={booking.id} value={booking.id}>
-                          {booking.profiles?.full_name} - ${booking.total_cost} ({new Date(booking.hire_start_date).toLocaleDateString()})
+                          {booking.profiles?.full_name} - KES {booking.total_cost?.toLocaleString()} ({new Date(booking.hire_start_date).toLocaleDateString()})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -410,7 +410,7 @@ export default function Payments() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.totalAmount.toFixed(2)}</div>
+              <div className="text-2xl font-bold">KES {stats.totalAmount.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">All payments combined</p>
             </CardContent>
           </Card>
@@ -421,7 +421,7 @@ export default function Payments() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.pendingAmount.toFixed(2)}</div>
+              <div className="text-2xl font-bold">KES {stats.pendingAmount.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Awaiting confirmation</p>
             </CardContent>
           </Card>
@@ -432,7 +432,7 @@ export default function Payments() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.completedAmount.toFixed(2)}</div>
+              <div className="text-2xl font-bold">KES {stats.completedAmount.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Successfully processed</p>
             </CardContent>
           </Card>
@@ -474,7 +474,7 @@ export default function Payments() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium text-lg">${payment.amount}</div>
+                        <div className="font-medium text-lg">KES {payment.amount.toLocaleString()}</div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={getPaymentTypeBadge(payment.payment_type)}>

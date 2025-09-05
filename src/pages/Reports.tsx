@@ -161,7 +161,7 @@ export default function Reports() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${reportData.totalRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">KES {reportData.totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">From paid bookings</p>
             </CardContent>
           </Card>
@@ -211,7 +211,7 @@ export default function Reports() {
               {reportData.monthlyRevenue.map((month) => (
                 <div key={month.month} className="flex items-center justify-between">
                   <span className="font-medium">{month.month}</span>
-                  <span className="text-2xl font-bold">${month.revenue.toFixed(2)}</span>
+                  <span className="text-2xl font-bold">KES {month.revenue.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -249,7 +249,7 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                ${reportData.totalBookings > 0 ? (reportData.totalRevenue / reportData.totalBookings).toFixed(2) : '0.00'}
+                KES {reportData.totalBookings > 0 ? Math.round(reportData.totalRevenue / reportData.totalBookings).toLocaleString() : '0'}
               </div>
             </CardContent>
           </Card>
@@ -260,7 +260,7 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                ${reportData.totalCustomers > 0 ? (reportData.totalRevenue / reportData.totalCustomers).toFixed(2) : '0.00'}
+                KES {reportData.totalCustomers > 0 ? Math.round(reportData.totalRevenue / reportData.totalCustomers).toLocaleString() : '0'}
               </div>
             </CardContent>
           </Card>

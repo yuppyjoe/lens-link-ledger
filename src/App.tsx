@@ -14,6 +14,10 @@ import Bookings from "./pages/Bookings";
 import Customers from "./pages/Customers";
 import Reports from "./pages/Reports";
 import Payments from "./pages/Payments";
+import Equipment from "./pages/Equipment";
+import MyBookings from "./pages/MyBookings";
+import NewBooking from "./pages/NewBooking";
+import PaymentHistory from "./pages/PaymentHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +65,26 @@ const App = () => (
             <Route path="/payments" element={
               <ProtectedRoute>
                 <Payments />
+              </ProtectedRoute>
+            } />
+            <Route path="/equipment" element={
+              <ProtectedRoute>
+                <Equipment />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-bookings" element={
+              <ProtectedRoute>
+                <MyBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/new-booking" element={
+              <ProtectedRoute>
+                <NewBooking />
+              </ProtectedRoute>
+            } />
+            <Route path="/payment-history" element={
+              <ProtectedRoute>
+                <PaymentHistory />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

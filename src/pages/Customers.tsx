@@ -259,7 +259,7 @@ export default function Customers() {
                         <span className="font-medium">{customer.booking_count || 0}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">${(customer.total_spent || 0).toFixed(2)}</span>
+                        <span className="font-medium">KES {(customer.total_spent || 0).toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
                         {customer.last_booking ? (
