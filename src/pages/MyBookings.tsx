@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, Calendar, Package } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, Package, CreditCard } from 'lucide-react';
+import DepositPaymentDialog from '@/components/DepositPaymentDialog';
 
 interface Booking {
   id: string;
@@ -20,6 +21,10 @@ interface Booking {
   payment_status: string;
   mpesa_reference?: string;
   created_at: string;
+  profiles?: {
+    full_name: string;
+    phone_number: string;
+  } | null;
   booking_items: {
     quantity: number;
     daily_rate: number;
@@ -36,6 +41,8 @@ export default function MyBookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
 
   if (!user) {
@@ -52,6 +59,10 @@ export default function MyBookings() {
         .from('bookings')
         .select(`
           *,
+          profiles (
+            full_name,
+            phone_number
+          ),
           booking_items (
             quantity,
             daily_rate,
@@ -66,7 +77,7 @@ export default function MyBookings() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBookings(data || []);
+      setBookings((data as any) || []);
     } catch (error) {
       toast({
         title: "Error",
@@ -102,6 +113,15 @@ export default function MyBookings() {
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  };
+
+  const handlePayDeposit = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentComplete = () => {
+    fetchMyBookings();
   };
 
   if (loading) {
@@ -267,11 +287,50 @@ export default function MyBookings() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Payment Actions */}
+                    {booking.payment_status !== 'paid' && booking.status !== 'cancelled' && (
+                      <div className="pt-4 border-t">
+                        <div className="flex gap-2">
+                          {booking.payment_status === 'unpaid' && (
+                            <Button
+                              onClick={() => handlePayDeposit(booking)}
+                              size="sm"
+                              className="flex items-center gap-2"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                              Pay Deposit
+                            </Button>
+                          )}
+                          {booking.balance_amount > 0 && booking.payment_status === 'partial' && (
+                            <Button
+                              onClick={() => handlePayDeposit(booking)}
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                              Pay Balance
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+        )}
+
+        {/* Payment Dialog */}
+        {selectedBooking && (
+          <DepositPaymentDialog
+            open={paymentDialogOpen}
+            onOpenChange={setPaymentDialogOpen}
+            booking={selectedBooking}
+            onPaymentComplete={handlePaymentComplete}
+          />
         )}
       </main>
     </div>

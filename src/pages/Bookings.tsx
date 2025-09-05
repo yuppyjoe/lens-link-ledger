@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, CreditCard } from 'lucide-react';
+import DepositPaymentDialog from '@/components/DepositPaymentDialog';
 
 interface Booking {
   id: string;
@@ -47,7 +48,9 @@ export default function Bookings() {
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -425,6 +428,15 @@ export default function Bookings() {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePayDeposit = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentComplete = () => {
+    fetchBookings();
   };
 
   const checkIfCustomer = async (userId: string): Promise<boolean> => {
@@ -843,8 +855,16 @@ export default function Bookings() {
                           </Select>
                         </div>
                       </TableCell>
-                      <TableCell>
+                       <TableCell>
                         <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePayDeposit(booking)}
+                            title="Process Payment"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </Button>
                            <Button
                              variant="outline"
                              size="sm"
@@ -876,6 +896,16 @@ export default function Bookings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Payment Dialog */}
+        {selectedBooking && (
+          <DepositPaymentDialog
+            open={paymentDialogOpen}
+            onOpenChange={setPaymentDialogOpen}
+            booking={selectedBooking}
+            onPaymentComplete={handlePaymentComplete}
+          />
+        )}
       </main>
     </div>
   );
