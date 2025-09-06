@@ -16,6 +16,17 @@ export default function Dashboard() {
     await signOut();
   };
 
+  const handleNavigation = (path: string) => {
+    console.log('Attempting to navigate to:', path);
+    console.log('Current user:', user);
+    console.log('Current user role:', userRole);
+    try {
+      navigate(path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -57,7 +68,7 @@ export default function Dashboard() {
                 <CardDescription>Manage staff accounts and roles</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/staff')}>Manage Staff</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/staff')}>Manage Staff</Button>
               </CardContent>
             </Card>
 
@@ -67,7 +78,7 @@ export default function Dashboard() {
                 <CardDescription>Manage camera gear inventory</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/inventory')}>Manage Inventory</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/inventory')}>Manage Inventory</Button>
               </CardContent>
             </Card>
 
@@ -77,7 +88,7 @@ export default function Dashboard() {
                 <CardDescription>View and manage all bookings</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/bookings')}>View Bookings</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/bookings')}>View Bookings</Button>
               </CardContent>
             </Card>
 
@@ -87,7 +98,7 @@ export default function Dashboard() {
                 <CardDescription>Manage customer profiles</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/customers')}>Manage Customers</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/customers')}>Manage Customers</Button>
               </CardContent>
             </Card>
 
@@ -99,7 +110,7 @@ export default function Dashboard() {
                   <CardDescription>View business reports</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full" onClick={() => navigate('/reports')}>View Reports</Button>
+                  <Button className="w-full" onClick={() => handleNavigation('/reports')}>View Reports</Button>
                 </CardContent>
               </Card>
             )}
@@ -110,7 +121,7 @@ export default function Dashboard() {
                 <CardDescription>Track payments and revenue</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/payments')}>View Payments</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/payments')}>View Payments</Button>
               </CardContent>
             </Card>
 
@@ -120,7 +131,7 @@ export default function Dashboard() {
                 <CardDescription>Analyze item performance and revenue</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/item-analysis')}>View Analytics</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/item-analysis')}>View Analytics</Button>
               </CardContent>
             </Card>
           </div>
@@ -134,7 +145,7 @@ export default function Dashboard() {
                 <CardDescription>Manage bookings assigned to you</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/my-bookings')}>View My Bookings</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/my-bookings')}>View My Bookings</Button>
               </CardContent>
             </Card>
 
@@ -144,7 +155,7 @@ export default function Dashboard() {
                 <CardDescription>View available equipment</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/inventory')}>View Inventory</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/inventory')}>View Inventory</Button>
               </CardContent>
             </Card>
 
@@ -154,7 +165,7 @@ export default function Dashboard() {
                 <CardDescription>Assist customers with bookings</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/customers')}>Manage Customers</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/customers')}>Manage Customers</Button>
               </CardContent>
             </Card>
 
@@ -164,7 +175,7 @@ export default function Dashboard() {
                 <CardDescription>Process payments</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/payments')}>Process Payments</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/payments')}>Process Payments</Button>
               </CardContent>
             </Card>
           </div>
@@ -178,7 +189,7 @@ export default function Dashboard() {
                 <CardDescription>View available camera gear</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/equipment')}>Browse Equipment</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/equipment')}>Browse Equipment</Button>
               </CardContent>
             </Card>
 
@@ -188,7 +199,7 @@ export default function Dashboard() {
                 <CardDescription>View your booking history</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/my-bookings')}>View My Bookings</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/my-bookings')}>View My Bookings</Button>
               </CardContent>
             </Card>
 
@@ -198,7 +209,7 @@ export default function Dashboard() {
                 <CardDescription>Create a new equipment booking</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/new-booking')}>New Booking</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/new-booking')}>New Booking</Button>
               </CardContent>
             </Card>
 
@@ -208,7 +219,7 @@ export default function Dashboard() {
                 <CardDescription>View your payment history</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" onClick={() => navigate('/payment-history')}>View Payments</Button>
+                <Button className="w-full" onClick={() => handleNavigation('/payment-history')}>View Payments</Button>
               </CardContent>
             </Card>
           </div>
