@@ -50,7 +50,7 @@ export default function Dashboard() {
 
         {/* Role-based Dashboard */}
         {(userRole === 'admin' || userRole === 'superadmin') && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle>Staff Management</CardTitle>
@@ -111,6 +111,16 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <Button className="w-full" onClick={() => navigate('/payments')}>View Payments</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Item Analysis</CardTitle>
+                <CardDescription>Analyze item performance and revenue</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" onClick={() => navigate('/item-analysis')}>View Analytics</Button>
               </CardContent>
             </Card>
           </div>

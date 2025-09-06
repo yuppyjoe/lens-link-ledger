@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
 interface InventoryItem {
@@ -26,6 +26,7 @@ interface InventoryItem {
 
 export default function Inventory() {
   const { user, userRole, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -183,13 +184,17 @@ export default function Inventory() {
             <p className="text-sm text-muted-foreground">Manage camera equipment inventory</p>
           </div>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Item
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/item-analysis')}>
+              View Analytics
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Item
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
@@ -285,6 +290,7 @@ export default function Inventory() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </header>
 
