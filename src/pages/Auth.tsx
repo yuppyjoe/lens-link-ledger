@@ -8,11 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Mail, CheckCircle } from 'lucide-react';
 
 export default function Auth() {
   const { user, signIn, signUp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [resendingVerification, setResendingVerification] = useState(false);
   const { toast } = useToast();
 
   // Redirect if already authenticated
@@ -32,7 +37,15 @@ export default function Auth() {
     const { error } = await signIn(email, password);
 
     if (error) {
-      setError(error.message);
+      if (error.message.includes('Email not confirmed')) {
+        setError('Please verify your email address before signing in. Check your inbox for a verification link.');
+        setSignUpEmail(email);
+        setShowEmailVerification(true);
+      } else if (error.message.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else {
+        setError(error.message);
+      }
     } else {
       toast({
         title: "Welcome back!",
@@ -55,15 +68,48 @@ export default function Auth() {
     const { error } = await signUp(email, password);
 
     if (error) {
-      setError(error.message);
+      if (error.message.includes('User already registered')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(error.message);
+      }
     } else {
+      setSignUpEmail(email);
+      setShowEmailVerification(true);
       toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
+        title: "Account created successfully!",
+        description: "Please check your email and click the verification link to activate your account.",
       });
     }
 
     setLoading(false);
+  };
+
+  const handleResendVerification = async () => {
+    if (!signUpEmail) return;
+    
+    setResendingVerification(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: signUpEmail,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`
+      }
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Verification email sent!",
+        description: "Please check your inbox for the verification link.",
+      });
+    }
+    setResendingVerification(false);
   };
 
   return (
@@ -75,11 +121,52 @@ export default function Auth() {
         </CardHeader>
         
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+          {showEmailVerification ? (
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Mail className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Check your email</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  We sent a verification link to <strong>{signUpEmail}</strong>
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Click the link in your email to verify your account and start using the platform.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleResendVerification} 
+                  variant="outline" 
+                  className="w-full"
+                  disabled={resendingVerification}
+                >
+                  {resendingVerification ? 'Sending...' : 'Resend verification email'}
+                </Button>
+                <Button 
+                  onClick={() => setShowEmailVerification(false)} 
+                  variant="ghost" 
+                  className="w-full"
+                >
+                  Back to sign in
+                </Button>
+              </div>
+
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  After verifying your email, you can sign in with your credentials.
+                </AlertDescription>
+              </Alert>
+            </div>
+          ) : (
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
             
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
@@ -153,7 +240,8 @@ export default function Auth() {
                 </Button>
               </form>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>
