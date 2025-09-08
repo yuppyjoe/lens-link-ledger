@@ -17,14 +17,7 @@ export default function Dashboard() {
   };
 
   const handleNavigation = (path: string) => {
-    console.log('Attempting to navigate to:', path);
-    console.log('Current user:', user);
-    console.log('Current user role:', userRole);
-    try {
-      navigate(path);
-    } catch (error) {
-      console.error('Navigation error:', error);
-    }
+    navigate(path);
   };
 
   return (
