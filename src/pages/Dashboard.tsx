@@ -53,6 +53,11 @@ export default function Dashboard() {
         ) : null}
 
         {/* Role-based Dashboard */}
+        <div className="mb-4 p-4 bg-muted rounded-lg">
+          <p className="text-sm text-muted-foreground">
+            Current role: <span className="font-medium">{userRole}</span>
+          </p>
+        </div>
         {(userRole === 'admin' || userRole === 'superadmin') && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
