@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, Calendar, CreditCard } from 'lucide-react';
@@ -33,8 +34,10 @@ export default function NewBooking() {
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    hire_start_date: '',
-    hire_end_date: '',
+    pickup_date: '',
+    rental_days: '1',
+    is_traveling: false,
+    late_return_allowance: '0',
     deposit_percentage: '50',
     items: [{ item_id: '', quantity: '1' }] as BookingItem[]
   });
@@ -105,12 +108,23 @@ export default function NewBooking() {
     }));
   };
 
-  const calculateTotal = () => {
-    if (!formData.hire_start_date || !formData.hire_end_date) return 0;
+  const calculateReturnDate = () => {
+    if (!formData.pickup_date || !formData.rental_days) return '';
     
-    const startDate = new Date(formData.hire_start_date);
-    const endDate = new Date(formData.hire_end_date);
-    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const pickupDate = new Date(formData.pickup_date);
+    const rentalDays = parseInt(formData.rental_days);
+    const allowanceDays = formData.is_traveling ? parseInt(formData.late_return_allowance) : 0;
+    
+    const returnDate = new Date(pickupDate);
+    returnDate.setDate(pickupDate.getDate() + rentalDays + allowanceDays);
+    
+    return returnDate.toISOString().split('T')[0];
+  };
+
+  const calculateTotal = () => {
+    if (!formData.pickup_date || !formData.rental_days) return 0;
+    
+    const days = parseInt(formData.rental_days);
     
     return formData.items.reduce((total, item) => {
       const inventoryItem = inventoryItems.find(inv => inv.id === item.item_id);
@@ -140,15 +154,16 @@ export default function NewBooking() {
       const totalCost = calculateTotal();
       const depositAmount = (totalCost * parseInt(formData.deposit_percentage)) / 100;
       const balanceAmount = totalCost - depositAmount;
-      const days = Math.ceil((new Date(formData.hire_end_date).getTime() - new Date(formData.hire_start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const days = parseInt(formData.rental_days);
+      const returnDate = calculateReturnDate();
 
       // Create booking
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           customer_id: user.id,
-          hire_start_date: formData.hire_start_date,
-          hire_end_date: formData.hire_end_date,
+          hire_start_date: formData.pickup_date,
+          hire_end_date: returnDate,
           total_cost: totalCost,
           deposit_amount: depositAmount,
           balance_amount: balanceAmount,
@@ -240,38 +255,110 @@ export default function NewBooking() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Rental Dates */}
+            {/* Rental Details */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  Rental Period
+                  Rental Details
                 </CardTitle>
-                <CardDescription>Choose your equipment rental dates</CardDescription>
+                <CardDescription>Specify pickup date and rental duration</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.hire_start_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, hire_start_date: e.target.value }))}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="pickup_date">Pickup Date</Label>
+                    <Input
+                      id="pickup_date"
+                      type="date"
+                      value={formData.pickup_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pickup_date: e.target.value }))}
+                      min={new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="rental_days">Number of Days</Label>
+                    <Input
+                      id="rental_days"
+                      type="number"
+                      min="1"
+                      value={formData.rental_days}
+                      onChange={(e) => setFormData(prev => ({ ...prev, rental_days: e.target.value }))}
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="end_date">End Date</Label>
-                  <Input
-                    id="end_date"
-                    type="date"
-                    value={formData.hire_end_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, hire_end_date: e.target.value }))}
-                    min={formData.hire_start_date || new Date().toISOString().split('T')[0]}
-                    required
-                  />
+
+                {/* Travel Options */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_traveling"
+                      checked={formData.is_traveling}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        is_traveling: e.target.checked,
+                        late_return_allowance: e.target.checked ? '2' : '0'
+                      }))}
+                      className="rounded border border-input"
+                    />
+                    <Label htmlFor="is_traveling" className="text-sm font-medium">
+                      Traveling with equipment?
+                    </Label>
+                  </div>
+                  
+                  {formData.is_traveling && (
+                    <div className="ml-6 space-y-2">
+                      <Label htmlFor="allowance" className="text-sm">Late return allowance (extra days)</Label>
+                      <Select
+                        value={formData.late_return_allowance}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, late_return_allowance: value }))}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 extra day</SelectItem>
+                          <SelectItem value="2">2 extra days</SelectItem>
+                          <SelectItem value="3">3 extra days</SelectItem>
+                          <SelectItem value="5">5 extra days</SelectItem>
+                          <SelectItem value="7">1 week</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Extra time buffer for travel delays (no additional charge)
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Calculated Return Date */}
+                {formData.pickup_date && formData.rental_days && (
+                  <div className="bg-muted p-4 rounded-lg">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Pickup Date:</span>
+                        <p className="font-medium">{new Date(formData.pickup_date).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Expected Return:</span>
+                        <p className="font-medium">{calculateReturnDate() ? new Date(calculateReturnDate()).toLocaleDateString() : '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Rental Duration:</span>
+                        <p className="font-medium">{formData.rental_days} day{parseInt(formData.rental_days) !== 1 ? 's' : ''}</p>
+                      </div>
+                      {formData.is_traveling && (
+                        <div>
+                          <span className="text-muted-foreground">Travel Allowance:</span>
+                          <p className="font-medium">+{formData.late_return_allowance} day{parseInt(formData.late_return_allowance) !== 1 ? 's' : ''}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
