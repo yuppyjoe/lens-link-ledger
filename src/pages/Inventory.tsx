@@ -48,10 +48,7 @@ export default function Inventory() {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
-  // Redirect if not authorized
-  if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Authorization is handled by ProtectedRoute in App.tsx
 
   useEffect(() => {
     // Only fetch inventory if user is authenticated and authorized

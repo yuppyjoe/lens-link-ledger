@@ -32,9 +32,7 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  if (!user || (userRole !== 'admin' && userRole !== 'staff' && userRole !== 'superadmin')) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Authorization is handled by ProtectedRoute in App.tsx
 
   useEffect(() => {
     fetchCustomers();

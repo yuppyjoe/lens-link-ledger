@@ -62,9 +62,7 @@ export default function Bookings() {
     items: [{ item_id: '', quantity: '1' }]
   });
 
-  if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Authorization is handled by ProtectedRoute in App.tsx
 
   useEffect(() => {
     fetchBookings();

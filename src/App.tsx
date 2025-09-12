@@ -39,37 +39,37 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/staff" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['superadmin']}>
                 <Staff />
               </ProtectedRoute>
             } />
             <Route path="/inventory" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['admin', 'staff', 'superadmin']}>
                 <Inventory />
               </ProtectedRoute>
             } />
             <Route path="/bookings" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['admin', 'staff', 'superadmin']}>
                 <Bookings />
               </ProtectedRoute>
             } />
             <Route path="/customers" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['admin', 'staff', 'superadmin']}>
                 <Customers />
               </ProtectedRoute>
             } />
             <Route path="/reports" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['admin', 'superadmin']}>
                 <Reports />
               </ProtectedRoute>
             } />
             <Route path="/payments" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['admin', 'staff', 'superadmin']}>
                 <Payments />
               </ProtectedRoute>
             } />
             <Route path="/equipment" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['customer', 'admin', 'staff', 'superadmin']}>
                 <Equipment />
               </ProtectedRoute>
             } />
@@ -79,17 +79,17 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/new-booking" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['customer', 'admin', 'staff', 'superadmin']}>
                 <NewBooking />
               </ProtectedRoute>
             } />
             <Route path="/payment-history" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['customer', 'admin', 'staff', 'superadmin']}>
                 <PaymentHistory />
               </ProtectedRoute>
             } />
             <Route path="/item-analysis" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole={['admin', 'superadmin']}>
                 <ItemAnalysis />
               </ProtectedRoute>
             } />
