@@ -36,12 +36,12 @@ export default function ItemAnalysis() {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
-  if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
+  if (!user || (userRole !== 'admin' && userRole !== 'staff' && userRole !== 'superadmin')) {
     return <Navigate to="/dashboard" replace />;
   }
 
   useEffect(() => {
-    if (user && (userRole === 'admin' || userRole === 'staff')) {
+    if (user && (userRole === 'admin' || userRole === 'staff' || userRole === 'superadmin')) {
       fetchItemAnalytics();
     }
   }, [user, userRole]);

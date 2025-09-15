@@ -61,7 +61,7 @@ export default function Payments() {
     mpesa_reference: ''
   });
 
-  if (!user || (userRole !== 'admin' && userRole !== 'staff')) {
+  if (!user || (userRole !== 'admin' && userRole !== 'staff' && userRole !== 'superadmin')) {
     return <Navigate to="/dashboard" replace />;
   }
 
